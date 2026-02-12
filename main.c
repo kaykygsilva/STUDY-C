@@ -64,7 +64,7 @@ void buildCsv(Node* head, FILE* p) {
 	}
 	fflush(p);
 	fclose(p);
-	printf("relatorio criado com sucesso!!");
+	printf("relatorio criado com sucesso!!\n");
 
 
 	/**/
@@ -184,6 +184,14 @@ void alterarData(FILE* p,FILE* g ,char new[], char old[]) {
 
 			fseek(p, posicao, SEEK_SET);
 		}
+		if (strcmp(old, b.price) == 0) {
+			posicao = ftell(p);
+			strcpy(b.price, new);
+			fseek(p, -(long)sizeof(Product), SEEK_CUR);
+			fwrite(&b, sizeof(Product), 1, p);
+
+			fseek(p, posicao, SEEK_SET);
+		}
 		
 
 
@@ -203,14 +211,14 @@ void alterarData(FILE* p,FILE* g ,char new[], char old[]) {
 
 void atualizeData(FILE* p, Node** head, Node** tail, FILE* g) {
 	rewind(p);
-	int c, d, w;
+	int c, d, w, opp;
 	char categ[30];
 	Product new;
 
 	Node* atual = *head;
 
 	while ((c = getchar()) != '\n' && c != EOF);
-	printf("\n O que vai atualizar: \n 1- categ. \n 2- nome \n 3- valor \n 4- quantidade \nOption: ");
+	printf("\n O que vai atualizar: \n 1- categ. \n 2- nome \nOption: ");
 	scanf("%d", &d);
 	
 	switch (d) {
@@ -249,35 +257,59 @@ void atualizeData(FILE* p, Node** head, Node** tail, FILE* g) {
 		break;
 
 	case 2:
-		while ((w = getchar()) != '\n' && w != EOF);
-		printf("\nQual o nome? ");
-		if (fgets(categ, sizeof(categ), stdin) != NULL) {
-			categ[strcspn(categ, "\n")] = 0;
-			int len = strlen(categ);
-			for (int i = 0; i < len; i++) {
-				categ[i] = tolower(categ[i]);
-			}
+		do {
 
-		}
 
-		while (atual != NULL && strcmp(atual->product.nm, categ) != 0) {
-			atual = atual->next;
-		}
-		if (atual != NULL) {
-
-			printf("\nDigite o novo nome: ");
-			char cat[20];
-			if (fgets(cat, sizeof(cat), stdin) != NULL) {
-				cat[strcspn(cat, "\n")] = 0;
-				int len = strlen(cat);
+			while ((w = getchar()) != '\n' && w != EOF);
+			printf("\nQual o nome? ");
+			if (fgets(categ, sizeof(categ), stdin) != NULL) {
+				categ[strcspn(categ, "\n")] = 0;
+				int len = strlen(categ);
 				for (int i = 0; i < len; i++) {
-					cat[i] = tolower(cat[i]);
+					categ[i] = tolower(categ[i]);
 				}
-				alterarData(p, g, cat, categ);
-				strcpy(atual->product.nm, cat);
+
 			}
 
-		}
+			while (atual != NULL && strcmp(atual->product.nm, categ) != 0) {
+				atual = atual->next;
+			}
+			if (atual != NULL) {
+
+				printf("\nDigite o novo nome: ");
+				char cat[20];
+				if (fgets(cat, sizeof(cat), stdin) != NULL) {
+					cat[strcspn(cat, "\n")] = 0;
+					int len = strlen(cat);
+					for (int i = 0; i < len; i++) {
+						cat[i] = tolower(cat[i]);
+					}
+					alterarData(p, g, cat, categ);
+					strcpy(atual->product.nm, cat);
+				}
+
+				printf("\nDeseja alterar o valor? (1-S / 2-N)\nOption:");
+				scanf("%d", &opp);
+
+				if (opp == 1) {
+					while ((w = getchar()) != '\n' && w != EOF);
+					printf("\nDigite o novo valor para %s:", atual->product.nm);
+					char newPrice[12];
+					if (fgets(newPrice, sizeof(newPrice), stdin) != NULL) {
+						newPrice[strcspn(newPrice, "\n")] = 0;
+						alterarData(p, g, newPrice, atual->product.price);
+						strcpy(atual->product.price, newPrice);
+						
+					}
+
+				}
+				
+
+			}
+			
+
+			opp = 2;
+		} while (opp != 2);
 
 		break;
 
@@ -323,13 +355,17 @@ int main() {
 			break;
 		case 3:
 			atualizeData(f, &head, &tail, g);
-			printf("Atualizar item");
+			//printf("Atualizar item");
 			break;
 		case 4:
 			buildCsv(head, g);
 			break;
 		case 5:
 			printf("Exiting...");
+			free(f);
+			free(g);
+			free(head);
+			free(tail);
 			break;
 		default:
 			printf("algume erro");
